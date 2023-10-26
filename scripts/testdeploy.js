@@ -50,6 +50,8 @@ async function main() {
   console.log("tokenContract2 Address", tokenContract2.address)
 
 
+  console.log("============ CREATING POOL ============");
+
   const createPoolTx = await factoryV2Contract.createPair(tokenContract1.address, tokenContract2.address);
   await createPoolTx.wait()
   // console.log("createPoolTx", createPoolTx)
@@ -66,6 +68,7 @@ async function main() {
   await tokenContract1.approve(routerV2Contract.address, _1000Tokens);
   await tokenContract2.approve(routerV2Contract.address, _1000Tokens);
 
+  console.log("============ ADDINGING LIQUIDITY ============");
 
   await routerV2Contract.addLiquidity(
     tokenContract1.address,    // address tokenContract1 
@@ -91,86 +94,56 @@ async function main() {
   const _500Token = tokenAmount(500)
   await tokenContract1.transfer(per1.address, _500Token)
 
+  console.log("============ USER 2 getting TOKEN 100 B ============");
 
-  const per1_routerV2Con = await routerV2.connect(per1)
+  const per1_routerV2Con = await routerV2Contract.connect(per1)
   const per1_tokenContract1 = await tokenContract1.connect(per1)
   //p1 adding token to pool sending 500 to p1
-  await per1_tokenContract1.approve(routerV2.address, _500Token);
+  await per1_tokenContract1.approve(routerV2Contract.address, _500Token);
 
-  const _900Token = tokenAmount(900)
-  const tx2 = await per1_routerV2Con.getAmountsIn(_900Token, [tokenContract1.address, tokenContract2.address])
+  const _100Token = tokenAmount(100)
+  const tx2 = await per1_routerV2Con.getAmountsIn(_100Token, [tokenContract1.address, tokenContract2.address])
   console.log("result for buying Token B", tx2)
+  // [
+  //   BigNumber { value: "111445447453471525689" },
+  //   BigNumber { value: "100000000000000000000" }
+  // ]
   console.log("Buying Token B..........")
   const tx3 = await per1_routerV2Con.swapExactTokensForTokens(tx2[0], tx2[1], [tokenContract1.address, tokenContract2.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
   console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
   console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
-  const tx4 = await per1_routerV2Con.getAmountsIn(_900Token, [tokenContract1.address, tokenContract2.address])
-  console.log("2nd estimation for buying Token B", tx4)
 
-  const query2 = await pair.getReserves();
-
+  const query2 = await poolContract.getReserves();
   console.log("Number of Token A in the pool rightnow", query2[0].toString());
   console.log("Number of Token B in the pool rightnow", query2[1].toString());
 
-  const tx5 = await per1_routerV2Con.getAmountsIn(_900Token, [tokenContract2.address, tokenContract1.address])
+
+
+  console.log("============ USER 2 getting TOKEN 50 A ============");
+
+  //!================================get token 1
+  const _50Token = tokenAmount(50)
+
+  const tx5 = await per1_routerV2Con.getAmountsIn(_50Token, [tokenContract2.address, tokenContract1.address])
   console.log("3rd estimation for buying Token A", tx5)
 
-  const per1_routerV2Con3 = await tokenContract2.connect(accounts[1])
-  await per1_routerV2Con3.approve(router.address, _500Token);
+
+
+  const per1_tokenContract2 = await tokenContract2.connect(per1)
+  await per1_tokenContract2.approve(routerV2Contract.address, _50Token);
 
   console.log("Buying Token A...........")
   const tx6 = await per1_routerV2Con.swapExactTokensForTokens(tx5[0], tx5[1], [tokenContract2.address, tokenContract1.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
   console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
   console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
   console.log("success")
-  const query3 = await pair.getReserves();
+  const query3 = await poolContract.getReserves();
 
   console.log("Number of Token A in the pool rightnow", query3[0].toString());
   console.log("Number of Token B in the pool rightnow", query3[1].toString());
 
-  const tx7 = await per1_routerV2Con.getAmountsIn(_900Token, [tokenContract2.address, tokenContract1.address])
-  console.log("3rd estimation for buying Token A", tx7)
 
 
-  const tx8 = await per1_routerV2Con.getAmountsIn(_900Token, [tokenContract1.address, tokenContract2.address])
-  console.log("2nd estimation for buying Token B", tx8)
-
-
-
-
-
-  //!===========================================================
-  // const bal = await tokenContract1.balanceOf(deployer.getAddress())
-  // console.log("deployer Balance", bal)
-  // console.log("============ TRANSFERS ============");
-
-  // const deployerCon1 = tokenContract1.connect(deployer)
-  // await deployerCon1.mint(per1.getAddress(), tokenAmount(500000))
-
-
-  // const bal = await tokenContract1.balanceOf(per1.getAddress())
-  // console.log("per1 Balance", bal)
-
-
-  // USDC = await ethers.getContractFactory("USDC")
-  // usdc = await USDC.deploy()
-  // await usdc.deployed()
-  // console.log("USDC Address", usdc.address)
-
-  // CIP = await ethers.getContractFactory("CIP")
-  // cip = await CIP.deploy(deployer.getAddress(),deployer.getAddress(),deployer.getAddress(),deployer.getAddress(),deployer.getAddress(),owner,OLDcip)
-  // await cip.deployed()
-  // console.log("CIP Address", cip.address)
-
-  // UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
-  // oracle = await UniswapV3Twap.deploy(factory,token0,token1,fees);
-  // await oracle.deployed();
-  // console.log("UniswapV3Twap Address", oracle.address);
-
-  // CIPMain = await ethers.getContractFactory("CIPMain")
-  // cipMain = await CIPMain.deploy(deployer.getAddress(), oracle, CAPPING)
-  // await cipMain.deployed()
-  // console.log("CIPMain Address", cipMain.address);
 
 }
 
