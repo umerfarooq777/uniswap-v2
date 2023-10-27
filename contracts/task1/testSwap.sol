@@ -31,57 +31,54 @@ contract TestUniswap1 {
         return IUniswapV2Factory(FACTORY).getPair(_tokenA, _tokenB);
     }
 
-    function swap(
-        address _tokenIn,
-        address _tokenOut,
+    function swapExactTokensForTokensHandle(
         uint _amountIn,
         uint _amountOutMin,
-        address _to
+        address[] memory path,
+        address _to,
+        uint256 _time
     ) external {
+        address _tokenIn = path[0];
         IERC20(_tokenIn).transferFrom(msg.sender, address(this), _amountIn);
         IERC20(_tokenIn).approve(UNISWAP_V2_ROUTER, _amountIn);
 
-        address[] memory path = new address[](2);
-        path[0] = _tokenIn;
-        path[1] = _tokenOut;
+        // address[] memory path = new address[](2);
+        // path[0] = _tokenIn;
+        // path[1] = _tokenOut;
 
         IUniswapV2Router(UNISWAP_V2_ROUTER).swapExactTokensForTokens(
             _amountIn,
             _amountOutMin,
             path,
             _to,
-            block.timestamp
+            _time
         );
     }
 
-    function getAmountOutMin(
+    function getAmountsOut(
         address _tokenIn,
         address _tokenOut,
         uint _amountIn
-    ) external view returns (uint) {
+    ) external view returns (uint[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = _tokenIn;
         path[1] = _tokenOut;
 
-        uint[] memory amountOutMins = IUniswapV2Router(UNISWAP_V2_ROUTER)
-            .getAmountsOut(_amountIn, path);
-
-        return amountOutMins[1];
+        return
+            IUniswapV2Router(UNISWAP_V2_ROUTER).getAmountsOut(_amountIn, path);
     }
 
-    function getAmountInMin(
+    function getAmountsIn(
         address _tokenIn,
         address _tokenOut,
         uint _amountOut
-    ) external view returns (uint) {
+    ) external view returns (uint[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = _tokenOut;
         path[1] = _tokenIn;
 
-        uint[] memory amountInMins = IUniswapV2Router(UNISWAP_V2_ROUTER)
-            .getAmountsIn(_amountOut, path);
-
-        return amountInMins[1];
+        return
+            IUniswapV2Router(UNISWAP_V2_ROUTER).getAmountsIn(_amountOut, path);
     }
 
     function creatUniswapPair(
@@ -93,7 +90,7 @@ contract TestUniswap1 {
         return pair;
     }
 
-    function addLiquidity(
+    function addLiquidityToPool(
         address _tokenA,
         address _tokenB,
         uint _amountA,

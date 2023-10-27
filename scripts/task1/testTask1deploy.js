@@ -58,97 +58,92 @@ async function main() {
   console.log("testUniswap1Contract Address", testUniswap1Contract.address)
 
 
-  // console.log("============ CREATING POOL ============");
+  console.log("============ CREATING POOL ============");
 
-  // const createPoolTx = await factoryV2Contract.createPair(tokenContract1.address, tokenContract2.address);
-  // await createPoolTx.wait()
-  // // console.log("createPoolTx", createPoolTx)
-  // // console.log("factoryV2Contract", factoryV2Contract)
+  const createPoolTx = await testUniswap1Contract.creatUniswapPair(tokenContract1.address, tokenContract2.address);
+  await createPoolTx.wait()
+  // console.log("createPoolTx", createPoolTx)
+  // console.log("factoryV2Contract", factoryV2Contract)
 
-  // const poolAddress = await factoryV2Contract.getPair(tokenContract1.address, tokenContract2.address);
-  // console.log("poolAddress", poolAddress)
+  const poolAddress = await testUniswap1Contract.getPoolAddress(tokenContract1.address, tokenContract2.address);
+  console.log("poolAddress", poolAddress)
 
-  // poolContract = await ethers.getContractAt("PairV2", poolAddress)
-
-
-
-  // const _1000Tokens = tokenAmount(1000)
-  // await tokenContract1.approve(routerV2Contract.address, _1000Tokens);
-  // await tokenContract2.approve(routerV2Contract.address, _1000Tokens);
-
-  // console.log("============ ADDINGING LIQUIDITY ============");
-
-  // await routerV2Contract.addLiquidity(
-  //   tokenContract1.address,    // address tokenContract1 
-  //   tokenContract2.address, //address tokenContract2
-  //   _1000Tokens, //amountADesired
-  //   _1000Tokens, //amountBDesired
-  //   _1000Tokens, //amountAMin
-  //   _1000Tokens, //amountBMin
-  //   deployer.getAddress(), //to
-  //   Math.floor(Date.now() / 1000) + 60 * 10 //deadline
-  //   // currentTime
-  // );
-
-  // const ownerPoolBal = await poolContract.balanceOf(deployer.getAddress());
-  // console.log(`balance LP: ${ownerPoolBal}`); //999999999999999999000
-
-
-  // const query0 = await poolContract.getReserves();
-  // console.log("Number of Token A in the pool rightnow", query0[0].toString()); //1000.000000000000000000
-  // console.log("Number of Token B in the pool rightnow", query0[1].toString()); //1000.000000000000000000
-
-  // //deployer sending 500 to p1
-  // const _500Token = tokenAmount(500)
-  // await tokenContract1.transfer(per1.address, _500Token)
-
-  // console.log("============ USER 2 getting TOKEN 100 B ============");
-
-  // const per1_routerV2Con = await routerV2Contract.connect(per1)
-  // const per1_tokenContract1 = await tokenContract1.connect(per1)
-  // //p1 adding token to pool sending 500 to p1
-  // await per1_tokenContract1.approve(routerV2Contract.address, _500Token);
-
-  // const _100Token = tokenAmount(100)
-  // const tx2 = await per1_routerV2Con.getAmountsIn(_100Token, [tokenContract1.address, tokenContract2.address])
-  // console.log("result for buying Token B", tx2)
-  // // [
-  // //   BigNumber { value: "111445447453471525689" },
-  // //   BigNumber { value: "100000000000000000000" }
-  // // ]
-  // console.log("Buying Token B..........")
-  // const tx3 = await per1_routerV2Con.swapExactTokensForTokens(tx2[0], tx2[1], [tokenContract1.address, tokenContract2.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
-  // console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
-  // console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
-
-  // const query2 = await poolContract.getReserves();
-  // console.log("Number of Token A in the pool rightnow", query2[0].toString());
-  // console.log("Number of Token B in the pool rightnow", query2[1].toString());
+  poolContract = await ethers.getContractAt("PairV2", poolAddress)
 
 
 
-  // console.log("============ USER 2 getting TOKEN 50 A ============");
+  const _1000Tokens = tokenAmount(1000)
+  await tokenContract1.approve(testUniswap1Contract.address, _1000Tokens);
+  await tokenContract2.approve(testUniswap1Contract.address, _1000Tokens);
 
-  // //!================================get token 1
-  // const _50Token = tokenAmount(50)
+  console.log("============ ADDINGING LIQUIDITY ============");
 
-  // const tx5 = await per1_routerV2Con.getAmountsIn(_50Token, [tokenContract2.address, tokenContract1.address])
-  // console.log("3rd estimation for buying Token A", tx5)
+  await testUniswap1Contract.addLiquidityToPool(
+    tokenContract1.address,    // address tokenContract1 
+    tokenContract2.address, //address tokenContract2
+    _1000Tokens, //amountADesired
+    _1000Tokens, //amountBDesired
+  );
+
+  const ownerPoolBal = await poolContract.balanceOf(deployer.getAddress());
+  console.log(`balance LP: ${ownerPoolBal}`); //999999999999999999000
+
+
+  const query0 = await poolContract.getReserves();
+  console.log("Number of Token A in the pool rightnow", query0[0].toString()); //1000.000000000000000000
+  console.log("Number of Token B in the pool rightnow", query0[1].toString()); //1000.000000000000000000
+
+  //deployer sending 500 to p1
+  const _500Token = tokenAmount(500)
+  await tokenContract1.transfer(per1.address, _500Token)
+
+  console.log("============ USER 2 getting 100 TOKEN B ============");
+
+  const per1_routerV2Con = await testUniswap1Contract.connect(per1)
+  const per1_tokenContract1 = await tokenContract1.connect(per1)
+  //p1 adding token to pool sending 500 to p1
+  await per1_tokenContract1.approve(testUniswap1Contract.address, _500Token);
+
+  const _100Token = tokenAmount(100)
+  const tx2 = await per1_routerV2Con.getAmountsIn(tokenContract1.address, tokenContract2.address, _100Token)
+  console.log("result for buying Token B", tx2)
+  // [
+  //   BigNumber { value: "111445447453471525689" },
+  //   BigNumber { value: "100000000000000000000" }
+  // ]
+  console.log("Buying Token B..........")
+  const tx3 = await per1_routerV2Con.swapExactTokensForTokensHandle(tx2[0], tx2[1], [tokenContract1.address, tokenContract2.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
+  console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
+  console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
+
+  const query2 = await poolContract.getReserves();
+  console.log("Number of Token A in the pool rightnow", query2[0].toString());
+  console.log("Number of Token B in the pool rightnow", query2[1].toString());
 
 
 
-  // const per1_tokenContract2 = await tokenContract2.connect(per1)
-  // await per1_tokenContract2.approve(routerV2Contract.address, _50Token);
+  console.log("============ USER 2 getting TOKEN 50 A ============");
 
-  // console.log("Buying Token A...........")
-  // const tx6 = await per1_routerV2Con.swapExactTokensForTokens(tx5[0], tx5[1], [tokenContract2.address, tokenContract1.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
-  // console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
-  // console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
-  // console.log("success")
-  // const query3 = await poolContract.getReserves();
+  //!================================get token 1
+  const _50Token = tokenAmount(50)
 
-  // console.log("Number of Token A in the pool rightnow", query3[0].toString());
-  // console.log("Number of Token B in the pool rightnow", query3[1].toString());
+  const tx5 = await per1_routerV2Con.getAmountsIn(tokenContract1.address, tokenContract2.address, _50Token)
+  console.log("3rd estimation for buying Token A", tx5)
+
+
+
+  const per1_tokenContract2 = await tokenContract2.connect(per1)
+  await per1_tokenContract2.approve(testUniswap1Contract.address, _50Token);
+
+  console.log("Buying Token A...........")
+  const tx6 = await per1_routerV2Con.swapExactTokensForTokensHandle(tx5[0], tx5[1], [tokenContract2.address, tokenContract1.address], per1.address, Math.floor(Date.now() / 1000) + 5 * 10)
+  console.log("acc 2 balance of tokenContract1", await tokenContract1.balanceOf(per1.address))
+  console.log("acc 2 balance of tokenContract2", await tokenContract2.balanceOf(per1.address))
+  console.log("success")
+  const query3 = await poolContract.getReserves();
+
+  console.log("Number of Token A in the pool rightnow", query3[0].toString());
+  console.log("Number of Token B in the pool rightnow", query3[1].toString());
 
 
 
