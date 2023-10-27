@@ -10,7 +10,7 @@ contract TestUniswap1 {
     address private constant FACTORY =
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
-    event Log(string message, uint indexed val);
+    event Log(string message, uint indexed val); //remove
 
     function getPoolTokens(
         address _tokenA,
@@ -99,8 +99,15 @@ contract TestUniswap1 {
         IERC20(_tokenA).transferFrom(msg.sender, address(this), _amountA);
         IERC20(_tokenB).transferFrom(msg.sender, address(this), _amountB);
 
-        IERC20(_tokenA).approve(UNISWAP_V2_ROUTER, _amountA);
-        IERC20(_tokenB).approve(UNISWAP_V2_ROUTER, _amountB);
+        if (IERC20(_tokenA).allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
+            ApproveMaxTokens(_tokenA);
+        }
+
+        if (IERC20(_tokenB).allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
+            ApproveMaxTokens(_tokenB);
+        }
+        // IERC20(_tokenA).approve(UNISWAP_V2_ROUTER, _amountA);
+        // IERC20(_tokenB).approve(UNISWAP_V2_ROUTER, _amountB);
 
         (uint amountA, uint amountB, uint liquidity) = IUniswapV2Router(
             UNISWAP_V2_ROUTER
@@ -118,6 +125,10 @@ contract TestUniswap1 {
         emit Log("amountA", amountA);
         emit Log("amountB", amountB);
         emit Log("liquidity", liquidity);
+    }
+
+    function ApproveMaxTokens(address _tokenAddress) internal {
+        IERC20(_tokenAddress).approve(UNISWAP_V2_ROUTER, type(uint56).max);
     }
 
     function removeLiquidity(address _tokenA, address _tokenB) external {
