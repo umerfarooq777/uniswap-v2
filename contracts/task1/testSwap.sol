@@ -112,8 +112,8 @@ contract TestUniswap1 {
                 _tokenB,
                 _amountA,
                 _amountB,
-                1,
-                1,
+                0,
+                0,
                 msg.sender,
                 block.timestamp
             );
