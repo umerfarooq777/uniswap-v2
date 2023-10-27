@@ -188,3 +188,18 @@ interface IUniswapV2Factory {
 
     function setFeeToSetter(address) external;
 }
+
+
+interface IERC20Ownable {
+  
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    
+    function owner() external view  returns (address);
+    function _checkOwner() external view ;
+
+    function renounceOwnership() external ;
+
+    function transferOwnership(address newOwner) external ;
+    function _transferOwnership(address newOwner) external ;
+   
+}
