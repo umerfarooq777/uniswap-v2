@@ -12,7 +12,7 @@ contract TestUniswap1 {
 
     event Log(string message, uint indexed val);
 
-    function getPoolTokems(
+    function getPoolTokens(
         address _tokenA,
         address _tokenB
     )
