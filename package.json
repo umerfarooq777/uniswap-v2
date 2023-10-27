@@ -9,8 +9,8 @@
     "testnet": "npx hardhat run scripts/testdeploy.js --network testnet",
     "testnetlocal": "npx hardhat run scripts/testdeploy.js --network localhost",
     "testnetlocal2": "npx hardhat run scripts/testdeploy.js --network hardhat",
-    "testTask1deployHardhat": "npx hardhat run scripts/task1/testTask1deploy.js --network hardhat",
-    "testTask1deployLocal": "npx hardhat run scripts/task1/testTask1deploy.js --network localhost"
+    "testTask1deployHardhat": "npx hardhat run scripts/task2/testTask2deploy.js --network hardhat",
+    "testTask1deployLocal": "npx hardhat run scripts/task2/testTask2deploy.js --network localhost"
   },
   "author": "",
   "license": "ISC",
