@@ -16,7 +16,7 @@ module.exports = {
     solidity: {
         compilers: [
             {
-                version: "0.8.21",
+                version: "0.8.20",
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -61,9 +61,9 @@ module.exports = {
             chainId: 1337,
             gasPrice: 225000000000,
             forking: {
-                url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_MAINNET}`, //eth
+                // url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_MAINNET}`, //eth
                 //  url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_ARBI_MAINNET}`, //arbitrum
-                // url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_GOERLI}`, //goerli
+                url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_GOERLI}`, //goerli
                 //   url: `https://bsc-dataseed1.binance.org/`, //bsc testnet 
                 // url : "https://wiser-wider-valley.bsc.discover.quiknode.pro/050ea5d25ccade9d764fac15bd4709b810d543a1/" //bsc
             },

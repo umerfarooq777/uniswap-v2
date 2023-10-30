@@ -66,6 +66,15 @@ interface IUniswapV2Router {
         address to,
         uint deadline
     ) external payable;
+
+    function removeLiquidityETH(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external;
 }
 
 interface IUniswapV2Pair {

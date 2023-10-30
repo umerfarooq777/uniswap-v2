@@ -9,8 +9,9 @@
     "testnet": "npx hardhat run scripts/testdeploy.js --network testnet",
     "testnetlocal": "npx hardhat run scripts/testdeploy.js --network localhost",
     "testnetlocal2": "npx hardhat run scripts/testdeploy.js --network hardhat",
-    "testTask1deployHardhat": "npx hardhat run scripts/task2/testTask2deploy.js --network hardhat",
-    "testTask1deployLocal": "npx hardhat run scripts/task2/testTask2deploy.js --network localhost"
+    "testTask1deployHardhat": "npx hardhat run scripts/task1/testTask1deploy.js --network hardhat",
+    "testTask1deployLocal": "npx hardhat run scripts/task1/testTask1deploy.js --network localhost",
+    "testTask1deployGoerli": "npx hardhat run scripts/task1/testTask1deploy.js --network goerli"
   },
   "author": "",
   "license": "ISC",
@@ -23,7 +24,7 @@
     "@animoca/f1dt-core_metadata": "^2.2.1",
     "@nomiclabs/hardhat-ethers": "^2.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin/contracts": "^4.8.0",
+    "@openzeppelin/contracts": "^5.0.0",
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",

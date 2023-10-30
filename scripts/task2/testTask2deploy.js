@@ -43,7 +43,7 @@ async function main() {
 
   // factoryV2Contract = await ethers.getContractAt("FactoryV2", factoryV2)
   // routerV2Contract = await ethers.getContractAt("RouterV2", routerV2)
-  TokenContract = await ethers.getContractFactory("TokenContract")
+  TokenContract = await ethers.getContractFactory("TokenContract2")
   TestUniswap1Contract = await ethers.getContractFactory("TestUniswap2")
 
 
@@ -52,13 +52,13 @@ async function main() {
   await tokenContract1.deployed()
   console.log("tokenContract1 Address", tokenContract1.address)
 
-  tokenContract2 = await TokenContract.deploy("Mango Token", "MANGO", 10000000) //10 million tokens
-  await tokenContract2.deployed()
-  console.log("tokenContract2 Address", tokenContract2.address)
+  // tokenContract2 = await TokenContract.deploy("Mango Token", "MANGO", 10000000) //10 million tokens
+  // await tokenContract2.deployed()
+  // console.log("tokenContract2 Address", tokenContract2.address)
 
-  testUniswap1Contract = await TestUniswap1Contract.deploy()
-  await testUniswap1Contract.deployed()
-  console.log("testUniswap1Contract Address", testUniswap1Contract.address)
+  // testUniswap1Contract = await TestUniswap1Contract.deploy()
+  // await testUniswap1Contract.deployed()
+  // console.log("testUniswap1Contract Address", testUniswap1Contract.address)
 
 
   // console.log("============ CREATING POOL ============");
