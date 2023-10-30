@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/Uniswap.sol";
 
 contract TokenContract is ERC20, Ownable {
-    
     address private constant UNISWAP_V2_ROUTER =
         0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address private constant DAI_TOKEN =
@@ -55,31 +54,22 @@ contract TokenContract is ERC20, Ownable {
         super._transfer(_from, _to, _amount - (burnAmount + taxAmount));
     }
 
-    function addLiquidityToPool(
+    function addLiquidityETHToPool(
         address _tokenA,
-        address _tokenB,
-        uint _amountA,
-        uint _amountB
-    ) external {
+        uint _amountA
+    ) external payable {
         IERC20(_tokenA).transferFrom(msg.sender, address(this), _amountA);
-        IERC20(_tokenB).transferFrom(msg.sender, address(this), _amountB);
 
         if (IERC20(_tokenA).allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
             ApproveMaxTokens(_tokenA);
-        }
-
-        if (IERC20(_tokenB).allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
-            ApproveMaxTokens(_tokenB);
         }
         // IERC20(_tokenA).approve(UNISWAP_V2_ROUTER, _amountA);
         // IERC20(_tokenB).approve(UNISWAP_V2_ROUTER, _amountB);
 
         // (uint amountA, uint amountB, uint liquidity) =
-        IUniswapV2Router(UNISWAP_V2_ROUTER).addLiquidity(
-            _tokenA,
-            _tokenB,
+        IUniswapV2Router(UNISWAP_V2_ROUTER).addLiquidityETH(
+            address(this),
             _amountA,
-            _amountB,
             0,
             0,
             msg.sender,
