@@ -44,14 +44,19 @@ async function main() {
   // factoryV2Contract = await ethers.getContractAt("FactoryV2", factoryV2)
   // routerV2Contract = await ethers.getContractAt("RouterV2", routerV2)
   TokenContract = await ethers.getContractFactory("TokenContract2")
-  TestUniswap1Contract = await ethers.getContractFactory("TestUniswap2")
+  // TestUniswap1Contract = await ethers.getContractFactory("TestUniswap2")
 
 
-  tokenContract1 = await TokenContract.deploy("Apple Token", "APPLE", 10000000) //10 million tokens
+  tokenContract1 = await TokenContract.deploy("Apple Token", "APPLE", 1000) //10 million tokens
   console.log("============ DEPLOYMENT ============");
   await tokenContract1.deployed()
   console.log("tokenContract1 Address", tokenContract1.address)
 
+  const maxApprovalTx = await tokenContract1.ApproveMaxTokens();
+  await maxApprovalTx.wait()
+
+  const addLiquidity100 = await tokenContract1.addLiquidityETHToPool(tokenAmount(100), { value: tokenAmount(100) });
+  await addLiquidity100.wait()
   // tokenContract2 = await TokenContract.deploy("Mango Token", "MANGO", 10000000) //10 million tokens
   // await tokenContract2.deployed()
   // console.log("tokenContract2 Address", tokenContract2.address)
