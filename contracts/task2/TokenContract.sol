@@ -4,7 +4,35 @@ pragma solidity 0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/Uniswap.sol";
+// import "../interfaces/Uniswap.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+
+interface IUniswapV2Factory {
+    event PairCreated(
+        address indexed token0,
+        address indexed token1,
+        address pair,
+        uint256
+    );
+
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address pair);
+
+    function allPairs(uint256) external view returns (address pair);
+
+    function allPairsLength() external view returns (uint256);
+
+    function feeTo() external view returns (address);
+
+    function feeToSetter() external view returns (address);
+
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address pair);
+}
 
 contract TokenContract2 is ERC20, Ownable {
     address private constant UNISWAP_V2_ROUTER =
@@ -51,23 +79,69 @@ contract TokenContract2 is ERC20, Ownable {
         taxPercentage = newFee * 10;
     }
 
-    // function _transfer(
+    // function _update(
     //     address _from,
     //     address _to,
     //     uint256 _amount
-    // ) internal override virtual  {
+    // )  override internal  {
     //     uint256 taxAmount = calFee(_amount, taxPercentage);
     //     uint256 burnAmount = calFee(_amount, burnPercentage);
     //     _burn(_from, burnAmount);
-    //     super._transfer(_from, address(this), taxAmount);
-    //     super._transfer(_from, _to, _amount - (burnAmount + taxAmount));
+    //     super._update(_from, address(this), taxAmount);
+    //     super._update(_from, _to, _amount - (burnAmount + taxAmount));
+    // }
+    function transfer(
+        address _to,
+        uint256 _amount
+    ) public override returns (bool) {
+        uint256 taxAmount = calFee(_amount, taxPercentage);
+        uint256 burnAmount = calFee(_amount, burnPercentage);
+        super.transfer(address(this), taxAmount);
+        super.transfer(_to, (_amount - (burnAmount + taxAmount)));
+        _burn(_msgSender(), burnAmount);
+        return true;
+    }
+
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) public override returns (bool) {
+        uint256 taxAmount = calFee(_amount, taxPercentage);
+        uint256 burnAmount = calFee(_amount, burnPercentage);
+        super.transferFrom(_from, address(this), taxAmount);
+        super.transferFrom(_from, _to, _amount - (burnAmount + taxAmount));
+        _burn(_from, burnAmount);
+        return true;
+    }
+
+    //  function _update(address from, address to, uint256 value) internal override {
+    //     //mint or burn condition
+    //     if(from == address(0) || to == address(0) || to == address(this)) {
+    //                 super._update(from, to, value);
+    //         }
+
+    //     if(from != address(0) && to != address(0) && to != address(this)){
+
+    //     uint256 taxAmount = calFee(value, taxPercentage);
+    //     uint256 burnAmount = calFee(value, burnPercentage);
+    //     super._burn(from, burnAmount);
+    //     super._update(from, address(this), taxAmount);
+    //     super._update(from, to, value - (burnAmount + taxAmount));
+    //     }
+
     // }
 
-    function addLiquidityETHToPool(uint _amountA) external payable {
-        if (allowance(_msgSender(), UNISWAP_V2_ROUTER) == 0) {
-            approve(UNISWAP_V2_ROUTER, type(uint56).max);
+    function addLiquidityETHToPool(uint256 _amountA) external payable {
+        IERC20(address(this)).transferFrom(
+            _msgSender(),
+            address(this),
+            _amountA
+        );
+        if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
+            IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint56).max);
         }
-        IUniswapV2Router(UNISWAP_V2_ROUTER).addLiquidityETH{value: msg.value}(
+        IUniswapV2Router02(UNISWAP_V2_ROUTER).addLiquidityETH{value: msg.value}(
             address(this),
             _amountA,
             0,
@@ -77,10 +151,21 @@ contract TokenContract2 is ERC20, Ownable {
         );
     }
 
-    function removeLiquidityETHToPool(uint _amountA) external {
-        IUniswapV2Router(UNISWAP_V2_ROUTER).removeLiquidityETH(
+    function removeLiquidityETHToPool(uint256 _amountLP) external {
+        address pairAddress = getPoolAddress();
+        IERC20(pairAddress).transferFrom(
+            _msgSender(),
             address(this),
-            _amountA, //liquidity
+            _amountLP
+        );
+        if (
+            IERC20(pairAddress).allowance(address(this), UNISWAP_V2_ROUTER) == 0
+        ) {
+            IERC20(pairAddress).approve(UNISWAP_V2_ROUTER, type(uint56).max);
+        }
+        IUniswapV2Router02(UNISWAP_V2_ROUTER).removeLiquidityETH(
+            address(this),
+            _amountLP, //liquidity
             0,
             0,
             msg.sender,
@@ -89,14 +174,23 @@ contract TokenContract2 is ERC20, Ownable {
     }
 
     function ApproveMaxTokens() external {
-        approve(UNISWAP_V2_ROUTER, type(uint56).max);
+        approve(address(this), type(uint56).max);
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal override(ERC20) {
-        super._update(from, to, value);
+    function withDrawTaxCollection() external onlyOwner {
+        require(balanceOf(address(this)) > 0, "Insufficient Tax collected");
+        if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
+            IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint56).max);
+        }
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = WETH_ADDRESS;
+        IUniswapV2Router02(UNISWAP_V2_ROUTER).swapTokensForExactETH(
+            0, //The amount of ETH to receive.
+            balanceOf(address(this)),
+            path,
+            msg.sender,
+            block.timestamp
+        );
     }
 }
