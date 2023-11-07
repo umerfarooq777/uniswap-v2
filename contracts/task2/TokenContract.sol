@@ -3,36 +3,11 @@ pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-// import "../interfaces/Uniswap.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 
-interface IUniswapV2Factory {
-    event PairCreated(
-        address indexed token0,
-        address indexed token1,
-        address pair,
-        uint256
-    );
-
-    function getPair(
-        address tokenA,
-        address tokenB
-    ) external view returns (address pair);
-
-    function allPairs(uint256) external view returns (address pair);
-
-    function allPairsLength() external view returns (uint256);
-
-    function feeTo() external view returns (address);
-
-    function feeToSetter() external view returns (address);
-
-    function createPair(
-        address tokenA,
-        address tokenB
-    ) external returns (address pair);
-}
+// import "hardhat/console.sol";
 
 contract TokenContract2 is ERC20, Ownable {
     address private constant UNISWAP_V2_ROUTER =
@@ -45,6 +20,25 @@ contract TokenContract2 is ERC20, Ownable {
 
     uint8 public burnPercentage = 2; //0.2%
     uint8 public taxPercentage = 8; //0.8%
+    mapping(address => bool) isTaxExcluded;
+    event LiquidityAdded(
+        address indexed _from,
+        uint256 _mintedLiquidity,
+        uint256 _time
+    );
+    event LiquidityRemoved(
+        address indexed _from,
+        uint256 _removedLiquidity,
+        uint256 _time
+    );
+    event TokenSwaped(
+        address indexed _swaper,
+        address _tokenRecieved,
+        uint256 _amountRecieved,
+        address _tokenSent,
+        uint256 _amountSent,
+        uint256 _time
+    );
 
     constructor(
         string memory _name,
@@ -53,6 +47,9 @@ contract TokenContract2 is ERC20, Ownable {
     ) ERC20(_name, _symbol) Ownable(msg.sender) {
         _mint(msg.sender, _amount * 10 ** decimals());
         _mint(address(this), 10 * 10 ** decimals());
+        isTaxExcluded[address(this)] = true;
+        isTaxExcluded[_msgSender()] = true;
+        isTaxExcluded[UNISWAP_V2_ROUTER] = true;
         IUniswapV2Factory(FACTORY).createPair(address(this), WETH_ADDRESS);
     }
 
@@ -94,6 +91,27 @@ contract TokenContract2 is ERC20, Ownable {
         taxPercentage = newFee * 10;
     }
 
+    function getReturnAmount(
+        uint256 _amountIn,
+        address _tokenIn
+    ) public view returns (uint[] memory amounts) {
+        address[] memory path = new address[](2);
+        if (_tokenIn != address(this) && _tokenIn != WETH_ADDRESS) {
+            revert("invalid token in address");
+        } else if (_tokenIn == address(this)) {
+            path[0] = address(this);
+            path[1] = WETH_ADDRESS; //output token
+        } else {
+            path[0] = WETH_ADDRESS;
+            path[1] = address(this); //output token
+        }
+        return
+            IUniswapV2Router02(UNISWAP_V2_ROUTER).getAmountsOut(
+                _amountIn,
+                path
+            );
+    }
+
     // function _update(
     //     address _from,
     //     address _to,
@@ -109,11 +127,21 @@ contract TokenContract2 is ERC20, Ownable {
         address _to,
         uint256 _amount
     ) public override returns (bool) {
-        uint256 taxAmount = calFee(_amount, taxPercentage);
-        uint256 burnAmount = calFee(_amount, burnPercentage);
-        super.transfer(address(this), taxAmount);
-        super.transfer(_to, (_amount - (burnAmount + taxAmount)));
-        _burn(_msgSender(), burnAmount);
+        uint256 taxAmount = 0;
+        uint256 burnAmount = 0;
+        if (!isTaxExcluded[_msgSender()]) {
+            taxAmount = calFee(_amount, taxPercentage);
+            burnAmount = calFee(_amount, burnPercentage);
+            super.transfer(address(this), taxAmount);
+            _burn(_msgSender(), burnAmount);
+        }
+
+        super.transfer(
+            _to,
+            !isTaxExcluded[_msgSender()]
+                ? _amount - (burnAmount + taxAmount)
+                : _amount
+        );
         return true;
     }
 
@@ -122,11 +150,19 @@ contract TokenContract2 is ERC20, Ownable {
         address _to,
         uint256 _amount
     ) public override returns (bool) {
-        uint256 taxAmount = calFee(_amount, taxPercentage);
-        uint256 burnAmount = calFee(_amount, burnPercentage);
-        super.transferFrom(_from, address(this), taxAmount);
-        super.transferFrom(_from, _to, _amount - (burnAmount + taxAmount));
-        _burn(_from, burnAmount);
+        uint256 taxAmount = 0;
+        uint256 burnAmount = 0;
+        if (!isTaxExcluded[_from]) {
+            taxAmount = calFee(_amount, taxPercentage);
+            burnAmount = calFee(_amount, burnPercentage);
+            _burn(_from, burnAmount);
+            super.transferFrom(_from, address(this), taxAmount);
+        }
+        super.transferFrom(
+            _from,
+            _to,
+            !isTaxExcluded[_from] ? _amount - (burnAmount + taxAmount) : _amount
+        );
         return true;
     }
 
@@ -154,13 +190,20 @@ contract TokenContract2 is ERC20, Ownable {
             address(this),
             _amountA
         );
-        uint256 taxAmount = calFee(_amountA, taxPercentage);
-        uint256 burnAmount = calFee(_amountA, burnPercentage);
-        uint256 transferedAmount = _amountA - (burnAmount + taxAmount);
+
+        uint256 taxAmount = 0;
+        uint256 burnAmount = 0;
+        if (!isTaxExcluded[_msgSender()]) {
+            taxAmount = calFee(_amountA, taxPercentage);
+            burnAmount = calFee(_amountA, burnPercentage);
+        }
+        uint256 transferedAmount = !isTaxExcluded[_msgSender()]
+            ? _amountA - (burnAmount + taxAmount)
+            : _amountA;
         if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
             IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
         }
-        IUniswapV2Router02(UNISWAP_V2_ROUTER).addLiquidityETH{value: msg.value}(
+        (uint amountToken, uint amountETH, uint liquidity)=IUniswapV2Router02(UNISWAP_V2_ROUTER).addLiquidityETH{value: msg.value}(
             address(this),
             transferedAmount,
             0,
@@ -168,6 +211,7 @@ contract TokenContract2 is ERC20, Ownable {
             msg.sender,
             block.timestamp
         );
+        emit LiquidityAdded(_msgSender(),liquidity,block.timestamp)
     }
 
     function removeLiquidityETHToPool(uint256 _amountLP) external {
@@ -197,6 +241,8 @@ contract TokenContract2 is ERC20, Ownable {
                 msg.sender,
                 block.timestamp
             );
+
+            emit LiquidityRemoved(_msgSender(),_amountLP,block.timestamp)
     }
 
     function ApproveMaxTokens() external {
@@ -234,9 +280,16 @@ contract TokenContract2 is ERC20, Ownable {
             address(this),
             _tokenAmount
         );
-        uint256 taxAmount = calFee(_tokenAmount, taxPercentage);
-        uint256 burnAmount = calFee(_tokenAmount, burnPercentage);
-        uint256 transferedAmount = _tokenAmount - (burnAmount + taxAmount);
+
+        uint256 taxAmount = 0;
+        uint256 burnAmount = 0;
+        if (!isTaxExcluded[_msgSender()]) {
+            taxAmount = calFee(_tokenAmount, taxPercentage);
+            burnAmount = calFee(_tokenAmount, burnPercentage);
+        }
+        uint256 transferedAmount = !isTaxExcluded[_msgSender()]
+            ? _tokenAmount - (burnAmount + taxAmount)
+            : _tokenAmount;
         if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
             IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
         }
@@ -254,7 +307,7 @@ contract TokenContract2 is ERC20, Ownable {
             );
     }
 
-    function swapEthWithToken() external payable {
+    function swapEthWithToken() external payable returns (uint[] memory) {
         require(msg.value > 0, "Insufficient funds tranfered");
 
         if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
@@ -264,14 +317,15 @@ contract TokenContract2 is ERC20, Ownable {
         address[] memory path = new address[](2);
         path[0] = WETH_ADDRESS;
         path[1] = address(this);
-        IUniswapV2Router02(UNISWAP_V2_ROUTER).swapExactETHForTokens{
-            value: msg.value
-        }(
+        uint[] memory amounts = IUniswapV2Router02(UNISWAP_V2_ROUTER)
+            .swapExactETHForTokens{value: msg.value}(
             0, //The minimum amount of output tokens that must be received for the transaction not to revert.
             path,
             _msgSender(),
             block.timestamp
         );
+        // console.log("amounts",amounts);
+        return amounts;
     }
 
     receive() external payable {}
