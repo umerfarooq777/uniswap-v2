@@ -359,6 +359,4 @@ contract TokenContract2 is ERC20, Ownable {
 
     fallback() external payable {}
 }
-
-//98999999999999999000 LP 1st
-// 90000000000000000000 LP 2nd after 8999999999999999000 LP remove from pool
+//0xA4DeF42d5dFB3833294DB7D9305ADF9d11d1E840 1st deploy goerli | subgraph https://api.studio.thegraph.com/query/57860/def-token/0.0.1
