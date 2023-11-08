@@ -24,6 +24,8 @@ const tokenAmount = (val) => {
 const formateToken = (val) => {
   return ethers.utils.formatEther(String(val))
 }
+const factory = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' //UniswapV2 Factory
+const router = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' //UniswapV2 Router
 
 async function main() {
   // This is just a convenience check
@@ -47,7 +49,7 @@ async function main() {
   // TestUniswap1Contract = await ethers.getContractFactory("TestUniswap2")
 
 
-  tokenContract1 = await TokenContract.deploy("Apple Token", "APPLE", 1000) //10 million tokens
+  tokenContract1 = await TokenContract.deploy("Apple Token", "APPLE", 1000, factory, router) //10 million tokens
   console.log("============ DEPLOYMENT ============");
   await tokenContract1.deployed()
   console.log("tokenContract1 Address", tokenContract1.address)

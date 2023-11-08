@@ -1,0 +1,8 @@
+{
+  "goerli": {
+    "TokenContract2": {
+      "address": "0xA4DeF42d5dFB3833294DB7D9305ADF9d11d1E840",
+      "startBlock": 10007395
+    }
+  }
+}
