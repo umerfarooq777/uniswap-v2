@@ -1,0 +1,39 @@
+specVersion: 0.0.5
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: TokenContract2
+    network: goerli
+    source:
+      address: "0xA4DeF42d5dFB3833294DB7D9305ADF9d11d1E840"
+      abi: TokenContract2
+      startBlock: 10007395
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - LiquidityAdded
+        - LiquidityRemoved
+        - OwnershipTransferred
+        - TokenSwaped
+        - Transfer
+      abis:
+        - name: TokenContract2
+          file: TokenContract2\abis\TokenContract2.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: LiquidityAdded(indexed address,uint256,uint256)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,uint256,uint256)
+          handler: handleLiquidityRemoved
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: TokenSwaped(indexed address,address,uint256,address,uint256,uint256)
+          handler: handleTokenSwaped
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: TokenContract2\TokenContract2.wasm
