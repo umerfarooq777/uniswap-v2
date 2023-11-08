@@ -7,21 +7,22 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
-contract TokenContract2 is ERC20, Ownable {
+contract DEFTOKEN is ERC20, Ownable {
     address public UNISWAP_V2_ROUTER;
     address public FACTORY;
 
     address public constant WETH_ADDRESS =
         0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
 
-    IUniswapV2Factory factoryContract;
-    IUniswapV2Router02 v2UniswapContract;
+    IUniswapV2Factory factoryContract = IUniswapV2Factory(FACTORY);
+    IUniswapV2Router02 v2UniswapContract =
+        IUniswapV2Router02(UNISWAP_V2_ROUTER);
 
-    uint8 public burnPercentage = 2; //0.2%
-    uint8 public taxPercentage = 8; //0.8%
-    mapping(address => bool) isTaxExcluded;
+    uint256 public burnPercentage = 2; //0.2%
+    uint256 public taxPercentage = 8; //0.8%
+    mapping(address => bool) private isTaxExcluded;
     event LiquidityAdded(
         address indexed _from,
         uint256 _mintedLiquidity,
@@ -50,22 +51,22 @@ contract TokenContract2 is ERC20, Ownable {
     ) ERC20(_name, _symbol) Ownable(msg.sender) {
         _mint(msg.sender, _amount * 10 ** decimals());
         _mint(address(this), 10 * 10 ** decimals());
-        isTaxExcluded[address(this)] = true;
-        isTaxExcluded[_msgSender()] = true;
-        isTaxExcluded[UNISWAP_V2_ROUTER] = true;
         FACTORY = _factoryAddress;
         UNISWAP_V2_ROUTER = _v2RouterAddress;
-        factoryContract = IUniswapV2Factory(_factoryAddress);
-        v2UniswapContract = IUniswapV2Router02(_v2RouterAddress);
-        factoryContract.createPair(address(this), WETH_ADDRESS);
+        IUniswapV2Factory(FACTORY).createPair(address(this), WETH_ADDRESS);
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
-    }
+    //!========== AVOID MINTABLE FUNCTIONS
+    // function mint(address to, uint256 amount) public onlyOwner {
+    //     _mint(to, amount);
+    // }
 
     function getPoolAddress() public view returns (address pair) {
         return factoryContract.getPair(address(this), WETH_ADDRESS);
+    }
+
+    function addressIsExcluded(address _add) public view returns (bool res) {
+        return isTaxExcluded[_add];
     }
 
     function getLPTokens(address _LPprovider) public view returns (uint256) {
@@ -84,18 +85,48 @@ contract TokenContract2 is ERC20, Ownable {
 
     function calFee(
         uint256 amount,
-        uint8 percentage
+        uint256 percentage
     ) internal pure returns (uint256) {
-        require(percentage <= 1000, "Percentage should be 1000 or less");
         return (amount * percentage) / 1000;
     }
 
-    function setBurnPercentage(uint8 newFee) public onlyOwner {
+    function setBurnPercentage(uint256 newFee) public onlyOwner {
+        require(newFee > 0, "can't be 0");
+        require(newFee != burnPercentage, "can't be old value");
         burnPercentage = newFee * 10;
     }
 
-    function setTaxPercentage(uint8 newFee) public onlyOwner {
+    function setTaxPercentage(uint256 newFee) public onlyOwner {
+        require(newFee > 0, "can't be 0");
+        require(newFee != taxPercentage, "can't be old value");
         taxPercentage = newFee * 10;
+    }
+
+    function setIsTaxExcluded(
+        address[] memory _newAddressess
+    ) public onlyOwner {
+        for (uint i; i < _newAddressess.length; i++) {
+            if (!isTaxExcluded[_newAddressess[i]]) {
+                isTaxExcluded[_newAddressess[i]] = true;
+            }
+        }
+    }
+
+    function getTransferedTokenAmount(
+        uint256 _amount
+    ) internal view returns (uint256 transferedAmount) {
+        uint256 taxAmount = 0;
+        uint256 burnAmount = 0;
+        if (!isTaxExcluded[_msgSender()]) {
+            taxAmount = calFee(_amount, taxPercentage);
+            burnAmount = calFee(_amount, burnPercentage);
+        } else {
+            console.log("HEEEEEE0", "EXCLUDEDEDED");
+        }
+        return
+            !isTaxExcluded[_msgSender()]
+                ? _amount - (burnAmount + taxAmount)
+                : _amount;
     }
 
     function getReturnAmount(
@@ -115,17 +146,6 @@ contract TokenContract2 is ERC20, Ownable {
         return v2UniswapContract.getAmountsOut(_amountIn, path);
     }
 
-    // function _update(
-    //     address _from,
-    //     address _to,
-    //     uint256 _amount
-    // )  override internal  {
-    //     uint256 taxAmount = calFee(_amount, taxPercentage);
-    //     uint256 burnAmount = calFee(_amount, burnPercentage);
-    //     _burn(_from, burnAmount);
-    //     super._update(_from, address(this), taxAmount);
-    //     super._update(_from, _to, _amount - (burnAmount + taxAmount));
-    // }
     function transfer(
         address _to,
         uint256 _amount
@@ -169,47 +189,55 @@ contract TokenContract2 is ERC20, Ownable {
         return true;
     }
 
-    //  function _update(address from, address to, uint256 value) internal override {
-    //     //mint or burn condition
-    //     if(from == address(0) || to == address(0) || to == address(this)) {
-    //                 super._update(from, to, value);
-    //         }
+    // function addLiquidityETHToPool(uint256 _amountA) external payable {
+    //     require(_amountA > 0, "Insufficient Token amount");
+    //     IERC20(address(this)).transferFrom(
+    //         _msgSender(),
+    //         address(this),
+    //         _amountA
+    //     );
 
-    //     if(from != address(0) && to != address(0) && to != address(this)){
-
-    //     uint256 taxAmount = calFee(value, taxPercentage);
-    //     uint256 burnAmount = calFee(value, burnPercentage);
-    //     super._burn(from, burnAmount);
-    //     super._update(from, address(this), taxAmount);
-    //     super._update(from, to, value - (burnAmount + taxAmount));
+    //     uint256 taxAmount = 0;
+    //     uint256 burnAmount = 0;
+    //     if (!isTaxExcluded[_msgSender()]) {
+    //         taxAmount = calFee(_amountA, taxPercentage);
+    //         burnAmount = calFee(_amountA, burnPercentage);
     //     }
-
+    //     uint256 transferedAmount = !isTaxExcluded[_msgSender()]
+    //         ? _amountA - (burnAmount + taxAmount)
+    //         : _amountA;
+    //     if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
+    //         IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
+    //     }
+    //     // (uint amountToken, uint amountETH, uint liquidity)=v2UniswapContract.addLiquidityETH{value: msg.value}(
+    //     (, , uint liquidity) = v2UniswapContract.addLiquidityETH{
+    //         value: msg.value
+    //     }(address(this), transferedAmount, 0, 0, msg.sender, block.timestamp);
+    //     emit LiquidityAdded(_msgSender(), liquidity, block.timestamp);
     // }
 
     function addLiquidityETHToPool(uint256 _amountA) external payable {
         require(_amountA > 0, "Insufficient Token amount");
+        require(
+            balanceOf(_msgSender()) >= _amountA,
+            "Insufficient Token Balance in account"
+        );
         IERC20(address(this)).transferFrom(
             _msgSender(),
             address(this),
             _amountA
         );
+        uint256 transferedAmount = getTransferedTokenAmount(_amountA);
+        console.log("HEEEEEE0", transferedAmount);
 
-        uint256 taxAmount = 0;
-        uint256 burnAmount = 0;
-        if (!isTaxExcluded[_msgSender()]) {
-            taxAmount = calFee(_amountA, taxPercentage);
-            burnAmount = calFee(_amountA, burnPercentage);
-        }
-        uint256 transferedAmount = !isTaxExcluded[_msgSender()]
-            ? _amountA - (burnAmount + taxAmount)
-            : _amountA;
         if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
             IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
         }
-        // (uint amountToken, uint amountETH, uint liquidity)=v2UniswapContract.addLiquidityETH{value: msg.value}(
+        console.log("HEEEEEE1");
         (, , uint liquidity) = v2UniswapContract.addLiquidityETH{
             value: msg.value
         }(address(this), transferedAmount, 0, 0, msg.sender, block.timestamp);
+        console.log("HEEEEEE2");
         emit LiquidityAdded(_msgSender(), liquidity, block.timestamp);
     }
 
@@ -247,21 +275,16 @@ contract TokenContract2 is ERC20, Ownable {
         approve(address(this), type(uint256).max);
     }
 
-    function ApproveMaxLPTokens() external {
-        address pairAddress = getPoolAddress();
-        IUniswapV2Pair(pairAddress).approve(msg.sender, type(uint256).max);
-    }
-
     function withDrawTaxCollection() external onlyOwner {
-        require(balanceOf(address(this)) > 0, "Insufficient Tax collected");
-        if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
-            IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
-        }
+        require(
+            balanceOf(address(this)) > 0,
+            "Insufficient Tax Token collected"
+        );
+
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH_ADDRESS;
-        uint256 oldBalance = _msgSender().balance;
-        v2UniswapContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint[] memory amounts = v2UniswapContract.swapExactTokensForETH(
             balanceOf(address(this)),
             0, //The amount of ETH to receive.
             path,
@@ -272,7 +295,7 @@ contract TokenContract2 is ERC20, Ownable {
         emit TokenSwaped(
             _msgSender(),
             WETH_ADDRESS,
-            _msgSender().balance - oldBalance,
+            amounts[amounts.length - 1],
             address(this),
             balanceOf(address(this)),
             block.timestamp
@@ -288,25 +311,13 @@ contract TokenContract2 is ERC20, Ownable {
             _tokenAmount
         );
 
-        uint256 taxAmount = 0;
-        uint256 burnAmount = 0;
-        if (!isTaxExcluded[_msgSender()]) {
-            taxAmount = calFee(_tokenAmount, taxPercentage);
-            burnAmount = calFee(_tokenAmount, burnPercentage);
-        }
-        uint256 transferedAmount = !isTaxExcluded[_msgSender()]
-            ? _tokenAmount - (burnAmount + taxAmount)
-            : _tokenAmount;
-        if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
-            IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
-        }
+        uint256 transferedAmount = getTransferedTokenAmount(_tokenAmount);
 
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH_ADDRESS;
-        uint256 oldBalance = _msgSender().balance;
 
-        v2UniswapContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint[] memory amounts = v2UniswapContract.swapExactTokensForETH(
             transferedAmount,
             0, //The amount of ETH to receive.
             path,
@@ -317,7 +328,7 @@ contract TokenContract2 is ERC20, Ownable {
         emit TokenSwaped(
             _msgSender(),
             WETH_ADDRESS,
-            _msgSender().balance - oldBalance,
+            amounts[amounts.length - 1],
             address(this),
             transferedAmount,
             block.timestamp
@@ -327,14 +338,9 @@ contract TokenContract2 is ERC20, Ownable {
     function swapEthWithToken() external payable returns (uint[] memory) {
         require(msg.value > 0, "Insufficient funds tranfered");
 
-        if (allowance(address(this), UNISWAP_V2_ROUTER) == 0) {
-            IERC20(address(this)).approve(UNISWAP_V2_ROUTER, type(uint256).max);
-        }
-
         address[] memory path = new address[](2);
         path[0] = WETH_ADDRESS;
         path[1] = address(this);
-        uint256 oldBalance = balanceOf(_msgSender());
         uint[] memory amounts = v2UniswapContract.swapExactETHForTokens{
             value: msg.value
         }(
@@ -346,7 +352,7 @@ contract TokenContract2 is ERC20, Ownable {
         emit TokenSwaped(
             _msgSender(),
             address(this),
-            balanceOf(_msgSender()) - oldBalance,
+            amounts[amounts.length - 1],
             WETH_ADDRESS,
             msg.value,
             block.timestamp

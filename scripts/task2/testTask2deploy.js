@@ -45,20 +45,32 @@ async function main() {
 
   // factoryV2Contract = await ethers.getContractAt("FactoryV2", factoryV2)
   // routerV2Contract = await ethers.getContractAt("RouterV2", routerV2)
-  TokenContract = await ethers.getContractFactory("TokenContract2")
+  TokenContract = await ethers.getContractFactory("DEFTOKEN")
   // TestUniswap1Contract = await ethers.getContractFactory("TestUniswap2")
 
 
-  tokenContract1 = await TokenContract.deploy("Apple Token", "APPLE", 1000, factory, router) //10 million tokens
+  tokenContract1 = await TokenContract.deploy("DEF TOKENS", "DTKS", 10000000, factory, router, { gasLimit: 5000000 }) //10 million tokens
   console.log("============ DEPLOYMENT ============");
   await tokenContract1.deployed()
   console.log("tokenContract1 Address", tokenContract1.address)
-
+  console.log([tokenContract1.address, deployer.address, router]);
+  console.log("=======1");
+  const addContractAddressAsExluded = await tokenContract1.setIsTaxExcluded([tokenContract1.address, deployer.address, router]);
+  await addContractAddressAsExluded.wait()
+  console.log(await tokenContract1.addressIsExcluded(deployer.address));
+  console.log(await tokenContract1.addressIsExcluded(tokenContract1.address));
+  console.log(await tokenContract1.addressIsExcluded(router));
+  console.log(await tokenContract1.addressIsExcluded("0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"));
+  console.log("=======2");
   const maxApprovalTx = await tokenContract1.ApproveMaxTokens();
   await maxApprovalTx.wait()
+  console.log("=======3");
 
-  const addLiquidity100 = await tokenContract1.addLiquidityETHToPool(tokenAmount(100), { value: tokenAmount(100) });
+  const addLiquidity100 = await tokenContract1.addLiquidityETHToPool(tokenAmount(100000), { value: tokenAmount(0.00001), gasLimit: 5000000 });
   await addLiquidity100.wait()
+
+
+
   // tokenContract2 = await TokenContract.deploy("Mango Token", "MANGO", 10000000) //10 million tokens
   // await tokenContract2.deployed()
   // console.log("tokenContract2 Address", tokenContract2.address)
