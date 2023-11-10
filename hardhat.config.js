@@ -68,10 +68,10 @@ module.exports = {
                 // url : "https://wiser-wider-valley.bsc.discover.quiknode.pro/050ea5d25ccade9d764fac15bd4709b810d543a1/" //bsc
             },
         },
-        sepolia: {
-            url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_SEPOLIA}`,
-            accounts: [`0x${process.env.PRIVATE_KEY}`],
-        },
+        // sepolia: {
+        //     url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_SEPOLIA}`,
+        //     accounts: [`0x${process.env.PRIVATE_KEY}`],
+        // },
         goerli: {
             url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_GOERLI}`,
             accounts: [`0x${process.env.PRIVATE_KEY}`],

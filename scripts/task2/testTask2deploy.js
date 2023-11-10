@@ -53,21 +53,28 @@ async function main() {
   console.log("============ DEPLOYMENT ============");
   await tokenContract1.deployed()
   console.log("tokenContract1 Address", tokenContract1.address)
-  console.log([tokenContract1.address, deployer.address, router]);
+  // console.log([tokenContract1.address, deployer.address, router]);
   console.log("=======1");
   const addContractAddressAsExluded = await tokenContract1.setIsTaxExcluded([tokenContract1.address, deployer.address, router]);
   await addContractAddressAsExluded.wait()
-  console.log(await tokenContract1.addressIsExcluded(deployer.address));
-  console.log(await tokenContract1.addressIsExcluded(tokenContract1.address));
-  console.log(await tokenContract1.addressIsExcluded(router));
-  console.log(await tokenContract1.addressIsExcluded("0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"));
+  const tranfer500toPer1 = await tokenContract1.transfer(per1.getAddress(), tokenAmount(500));
+  await tranfer500toPer1.wait()
+  // console.log(await tokenContract1.addressIsExcluded(deployer.address));
+  // console.log(await tokenContract1.addressIsExcluded(tokenContract1.address));
+  // console.log(await tokenContract1.addressIsExcluded(router));
+  // console.log(await tokenContract1.addressIsExcluded("0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"));
+  console.log(await tokenContract1.getPoolAddress());
   console.log("=======2");
   const maxApprovalTx = await tokenContract1.ApproveMaxTokens();
   await maxApprovalTx.wait()
   console.log("=======3");
 
-  const addLiquidity100 = await tokenContract1.addLiquidityETHToPool(tokenAmount(100000), { value: tokenAmount(0.00001), gasLimit: 5000000 });
+  const addLiquidity100 = await tokenContract1.addLiquidityETHToPool(tokenAmount(100), { value: tokenAmount(100), gasLimit: 5000000 });
   await addLiquidity100.wait()
+  // const withdrawTax = await tokenContract1.withDrawTaxCollection();
+  // console.log("withdrawTax", withdrawTax);
+  // await withdrawTax.wait()
+  // console.log("withdrawTax", withdrawTax);
 
 
 
