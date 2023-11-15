@@ -55,6 +55,7 @@ async function main() {
   console.log("tokenContract1 Address", tokenContract1.address)
   // console.log([tokenContract1.address, deployer.address, router]);
   console.log("=======1");
+  // ["0x503BaFD30ab87B6497A262ED7dAD187bdC479170","0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266","0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"]
   const addContractAddressAsExluded = await tokenContract1.setIsTaxExcluded([tokenContract1.address, deployer.address, router]);
   await addContractAddressAsExluded.wait()
   const tranfer500toPer1 = await tokenContract1.transfer(per1.getAddress(), tokenAmount(500));
