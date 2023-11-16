@@ -10,8 +10,8 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 // import "hardhat/console.sol";
 
 contract DEFTOKEN is ERC20, Ownable {
-    address public UNISWAP_V2_ROUTER;
-    address public FACTORY;
+    address public UNISWAP_V2_ROUTER; //0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+    address public FACTORY; //0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
 
     address public constant WETH_ADDRESS =
         0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
@@ -90,19 +90,20 @@ contract DEFTOKEN is ERC20, Ownable {
         uint256 amount,
         uint256 percentage
     ) internal pure returns (uint256) {
+        require(amount>=1000,"amount cant be less than 1000");
         return (amount * percentage) / 1000;
     }
 
     function setBurnPercentage(uint256 newFee) public onlyOwner {
-        require(newFee > 0 && newFee <= 25, "can't be 0 or greater than 25");
+        require(newFee > 0 && newFee <= 250, "can't be 0 or greater than 250");
         require(newFee != burnPercentage, "can't be old value");
-        burnPercentage = newFee * 10;
+        burnPercentage = newFee;
     }
 
     function setTaxPercentage(uint256 newFee) public onlyOwner {
-        require(newFee > 0 && newFee <= 25, "can't be 0 or greater than 25");
+        require(newFee > 0 && newFee <= 250, "can't be 0 or greater than 250");
         require(newFee != taxPercentage, "can't be old value");
-        taxPercentage = newFee * 10;
+        taxPercentage = newFee;
     }
 
     function setIsTaxExcluded(
@@ -366,3 +367,4 @@ contract DEFTOKEN is ERC20, Ownable {
     fallback() external payable {}
 }
 //0xA4DeF42d5dFB3833294DB7D9305ADF9d11d1E840 1st deploy goerli | subgraph https://api.studio.thegraph.com/query/57860/def-token/0.0.1
+//0xBFdEdA659797Ef1A567F9Dc650cBb3948B1432b7 2nd deploy
